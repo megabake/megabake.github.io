@@ -42,6 +42,6 @@ Checks cover source benchmark values, baseline selection, timing modes, ZIP inte
 
 ## Search and sharing
 
-The canonical URL, Open Graph/Twitter metadata, and JSON-LD are in `index.html`. `sitemap.xml` lists the canonical page. The deploy workflow pre-renders the benchmark rows and package links before validation, so content is readable without JavaScript.
+The canonical URL, Open Graph/Twitter metadata, and JSON-LD are in `index.html`. `sitemap.xml` lists the canonical page. CSS and JavaScript URLs carry content hashes to refresh browser and crawler caches after changes. The deploy workflow pre-renders the benchmark rows and package links before validation, so content is readable without JavaScript.
 
 When moving to the root domain, update the canonical URL, sharing URLs, and JSON-LD URLs together, then run `node scripts/render-static.cjs` to regenerate the sitemap. The current canonical remains the existing live `/website/` URL until that move is complete. Sitemap submission and search indexing require the site owner's Search Console account.
