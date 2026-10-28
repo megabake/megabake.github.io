@@ -6,7 +6,7 @@
     <title>MegaBake — one persistent CUDA kernel for Hugging Face decode</title>
     <meta
       name="description"
-      content="MegaBake is an open-source PyTorch compiler backend. It turns an unmodified Hugging Face model into one persistent CUDA megakernel. Decode leaderboard from measured H200 results."
+      content="MegaBake is an open-source PyTorch compiler backend. It compiles supported Hugging Face models into one persistent CUDA megakernel. Decode leaderboard from measured H200 results."
     />
     <meta name="theme-color" content="#1c100c" />
     <link rel="icon" href="assets/favicon.png" type="image/png" />
@@ -43,43 +43,47 @@
     </header>
 
     <main id="top">
-      <section class="hero">
+      <section class="hero" id="pitch">
         <div class="hero-copy">
           <p class="kicker">PyTorch compiler · MIT · Hopper</p>
-          <h1>One persistent CUDA kernel for a Hugging Face decode step.</h1>
-          <p class="dek" id="pitch">
-            MegaBake is an open-source PyTorch compiler backend. It takes an
-            unmodified PyTorch or Hugging Face model and generates a single
-            persistent CUDA kernel that covers the embedding, every transformer
-            layer, the final norm, the vocabulary projection, and the KV-cache
-            update. Teams keep their model code, their
-            <code>from_pretrained</code> workflow, and the
-            <code>torch.compile</code> interface.
-          </p>
+          <h1>Your model.<br />One kernel.<br /><em>Fully baked.</em></h1>
+          <p class="dek">Compile supported Hugging Face models into one persistent CUDA
+            kernel. Keep your model code. Keep <code>torch.compile</code>.
+            Bake away the launch overhead.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#leaderboard">Explore the benchmarks <span aria-hidden="true">↗</span></a>
+            <a class="button ghost" href="#download">Get a megakernel <span aria-hidden="true">↓</span></a>
+          </div>
           <div class="codeblock">
             <div class="codeblock-bar">
               <span>torch.compile</span>
-              <button type="button" id="copy-code">Copy</button>
+              <button type="button" id="copy-code" aria-live="polite">Copy</button>
             </div>
             <pre><code>compiled = torch.compile(
     model,
     backend=megabake.make_backend(),
 )</code></pre>
           </div>
-          <div class="hero-actions">
-            <a class="button primary" href="#leaderboard">Decode leaderboard</a>
-            <a class="button ghost" href="https://github.com/megabake/megabake">View the repository</a>
-          </div>
+          <p class="hero-footnote">Open source. MIT licensed. Built for NVIDIA Hopper.</p>
         </div>
         <figure class="hero-mark">
-          <img src="assets/mark.png" alt="MegaBake mark: a layered cake with a flame on top" />
+          <div class="kernel-caption"><span class="status-dot"></span> THE WHOLE MODEL. ONE LAUNCH.</div>
+          <div class="mark-stage">
+            <span class="stage-label">MODEL → MEGAKERNEL</span>
+            <img src="assets/mark.png" width="360" height="340" alt="MegaBake mark: a layered cake with a flame on top" />
+            <span class="stage-coordinate">CUDA / H200</span>
+          </div>
+          <figcaption>
+            <span>Embedding <b>→</b> Transformer layers <b>→</b> Decode</span>
+            <strong>One persistent CUDA kernel</strong>
+          </figcaption>
         </figure>
       </section>
 
-      <section class="stats" aria-label="Headline results from the elevator pitch">
+      <section class="stats" aria-label="Headline results">
         <article>
-          <p class="stat">1</p>
-          <p>launch per token. SmolLM-135M issues 1,780 in eager PyTorch and 632 under <code>torch.compile</code>.</p>
+          <p class="stat">1<span> launch</span></p>
+          <p>per token. SmolLM-135M issues 1,780 in eager PyTorch and 632 under <code>torch.compile</code>.</p>
         </article>
         <article>
           <p class="stat">14×</p>
@@ -90,10 +94,12 @@
           <p>lower per-token latency than <code>torch.compile</code> in its default mode, at the top of the range.</p>
         </article>
         <article>
-          <p class="stat">8</p>
+          <p class="stat">8<span> models</span></p>
           <p>complete Hugging Face decoders, batch-1 decode, bf16, on an H200 60-SM partition.</p>
         </article>
       </section>
+      <p class="baseline-note">Headline latency gains use earlier eager / default <code>torch.compile</code> baselines.
+        The leaderboard below compares against the stronger CUDA-graphed Inductor baseline.</p>
       <section class="board-wrap" id="leaderboard">
         <div class="board">
           <div class="board-head">
@@ -121,8 +127,17 @@
               <span class="segment-thumb" aria-hidden="true"></span>
               <button type="button" data-filter="all" aria-pressed="true">All</button>
               <button type="button" data-filter="ahead" aria-pressed="false">Faster</button>
+              <button type="button" data-filter="close" aria-pressed="false">Close</button>
               <button type="button" data-filter="behind" aria-pressed="false">Slower</button>
             </div>
+            <label class="mobile-sort" for="mobile-sort">Sort by
+              <select id="mobile-sort">
+                <option value="speed:desc">Speed: fastest first</option>
+                <option value="speed:asc">Speed: slowest first</option>
+                <option value="model:asc">Model: A to Z</option>
+                <option value="model:desc">Model: Z to A</option>
+              </select>
+            </label>
             <p class="measure-note" id="measure-note">
               Pipelined calls overlap host work with the previous kernel.
             </p>
@@ -131,9 +146,10 @@
           <div class="legend">
             <span><i class="swatch bake"></i> MegaBake</span>
             <span><i class="swatch base"></i> CUDA-graphed Inductor</span>
-            <span class="legend-note">Ahead means at least 10% faster. Close sits inside the slice’s 10–15% clock noise.</span>
+            <span class="legend-note">Faster / Slower means at least a 10% difference in speed. Close is within 10%; the shared slice has 10–15% clock noise.</span>
           </div>
 
+          <noscript><p class="board-intro">Enable JavaScript to explore the leaderboard. All measurements are available in <a href="https://github.com/megabake/megabake/blob/main/ROADMAP.md">the source roadmap</a>.</p></noscript>
           <div class="table-scroll">
             <table>
               <caption class="sr-only">
@@ -173,40 +189,55 @@
         </div>
       </section>
 
-      <section class="prose" id="download">
-        <p class="kicker">Artifacts</p>
-        <h2>Download the published megakernels.</h2>
-        <p>
-          Every leaderboard decode kernel is checked into
-          <a href="https://github.com/megabake/megakernels">github.com/megabake/megakernels</a>.
-          Each entry is one full decode step: a single persistent CUDA kernel
-          (CuTe DSL) generated from a <code>torch.compile</code> FX graph, plus
-          its source map and the benchmark report that produced it.
-        </p>
-        <div class="codeblock">
-          <div class="codeblock-bar">
-            <span>clone</span>
-            <button type="button" id="copy-clone">Copy</button>
-          </div>
-          <pre><code>git clone https://github.com/megabake/megakernels.git</code></pre>
+      <section class="download" id="download">
+        <div class="download-head">
+          <p class="kicker">Artifacts</p>
+          <h2>Download a megakernel.</h2>
+          <p>
+            One click per model. Each zip is a published H200 decode package:
+            <code>module.py</code>, <code>report.json</code>, and
+            <code>source_map.json</code>. Needs the MegaBake revision pinned in
+            the report.
+          </p>
+          <p class="artifact-note">These are generated CuTe DSL sources, not standalone binaries or model weights.
+            You need the model weights, a compatible Hopper GPU, and the matching MegaBake runtime.
+            Package reports describe later runs; their timings can differ from the 21 October leaderboard.</p>
         </div>
-        <p>
-          Browse
-          <code>kernels/&lt;org&gt;--&lt;model&gt;/&lt;gpu&gt;/&lt;mode&gt;/</code>
-          for <code>module.py</code>, <code>source_map.json</code>, and
-          <code>report.json</code>. Kernels need the MegaBake revision pinned in
-          the report. Details and regeneration commands are in that repository’s
-          <a href="https://github.com/megabake/megakernels#readme">README</a>.
+
+        <ul class="kernel-list" id="kernel-list" aria-label="Published megakernels"></ul>
+        <p class="download-status" id="download-status" aria-live="polite"></p>
+
+        <noscript><p>Enable JavaScript for individual packages, or use the full archive below.</p></noscript>
+        <p class="download-foot">
+          Source:
+          <a href="https://github.com/megabake/megakernels">megabake/megakernels</a>.
+          Prefer the repo only when you want every kernel at once —
+          <a href="https://github.com/megabake/megakernels/archive/refs/heads/main.zip"
+            >download the full archive</a
+          >.
         </p>
-        <div class="hero-actions">
-          <a class="button primary" href="https://github.com/megabake/megakernels"
-            >Open megakernels</a
-          >
-          <a
-            class="button ghost"
-            href="https://github.com/megabake/megakernels#results"
-            >See measured results</a
-          >
+      </section>
+
+      <section class="evaluation" id="evaluation" aria-labelledby="evaluation-title">
+        <div class="evaluation-heading">
+          <p class="kicker">Integration &amp; evaluation</p>
+          <h2 id="evaluation-title">A compiler backend.<br />A path to the Hub.</h2>
+          <p>Keep the PyTorch and Hugging Face model interface. Evaluate the compiled workload,
+            then distribute a verified kernel alongside its model revision.</p>
+          <a href="https://github.com/megabake/megabake#current-status">Read the current compiler status <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="evaluation-details">
+          <article><h3>Supported today</h3><p>Hopper / SM90, bf16, static shape buckets, and bounded contiguous decode KV state.
+            Eight decoders in this benchmark; performance and numerical agreement vary by model.
+            Broader cache formats and production serving need further work.</p></article>
+          <article><h3>Reproduce before integrating</h3><p>Start with the pinned revision in a package’s <code>report.json</code>.
+            Check outputs across advancing decode calls and compare the complete call with CUDA-graphed Inductor
+            on the same GPU, shapes, and context.</p>
+            <a href="https://github.com/megabake/megabake/blob/main/benchmarks/full_model.py">Benchmark harness ↗</a>
+            <a href="https://github.com/megabake/megabake/blob/main/ROADMAP.md">Measurements &amp; limitations ↗</a></article>
+          <article><h3>Proposed Hub integration</h3><p>Publish device bodies and revision-specific megakernels with explicit hardware,
+            shape, runtime, and numerical requirements. This is an integration proposal; the downloadable
+            packages currently live on GitHub.</p></article>
         </div>
       </section>
 
@@ -321,7 +352,7 @@
         <div>
           <p class="kicker">Working today</p>
           <ul>
-            <li>Eight Hugging Face decoders compile into one persistent CUDA kernel, for prefill and stateful decode.</li>
+            <li>Eight Hugging Face decoders compile into one persistent CUDA kernel for stateful decode. Prefill support varies by model.</li>
             <li>Outputs are checked against PyTorch. SmolLM-135M and Qwen2-0.5B match eager bf16 across advancing decode calls.</li>
             <li>Hopper, bf16. Static shapes, with <code>megabake.bucketed</code> covering a few prompt and batch lengths.</li>
           </ul>
@@ -363,12 +394,15 @@
 
     <footer class="site-footer">
       <img src="assets/mark.png" alt="" width="72" height="68" />
-      <p>MIT licensed.</p>
-      <p>
-        <a href="https://github.com/megabake/megabake">github.com/megabake/megabake</a>
-      </p>
+      <div class="footer-copy">
+        <p>MIT licensed.</p>
+        <p>
+          <a href="https://github.com/megabake/megabake">github.com/megabake/megabake</a>
+        </p>
+      </div>
     </footer>
 
     <script src="js/board.js"></script>
+    <script src="js/download.js"></script>
   </body>
 </html>

@@ -140,10 +140,9 @@ function verdict(speedup) {
 }
 
 function verdictLabel(kind, speedup) {
-  const ratio = speedup.toFixed(2) + "×";
-  if (kind === "ahead") return ratio + " ahead";
-  if (kind === "behind") return ratio + " behind";
-  return ratio + " close";
+  if (kind === "ahead") return `${((speedup - 1) * 100).toFixed(0)}% faster`;
+  if (kind === "behind") return `${((1 - speedup) * 100).toFixed(0)}% slower`;
+  return "Within 10%";
 }
 
 function rows() {
@@ -160,8 +159,7 @@ function rows() {
   });
   const max = decorated.reduce((peak, row) => Math.max(peak, row.speed, row.baseSpeed), 1);
   let visible = decorated.filter((row) => {
-    if (state.filter === "ahead") return row.speedup >= 1;
-    if (state.filter === "behind") return row.speedup < 1;
+    if (state.filter !== "all") return row.kind === state.filter;
     return true;
   });
   const dir = state.dir === "asc" ? 1 : -1;
@@ -179,7 +177,7 @@ function rowMarkup(row) {
       <td data-label="Model">
         <div class="model-name">${row.model}</div>
         <div class="model-note">${row.note}</div>
-        <button type="button" class="more" aria-expanded="false" data-open="${row.model}">Breakdown</button>
+        <button type="button" class="more" aria-controls="detail-${RESULTS.findIndex((item) => item.model === row.model)}" aria-label="Breakdown for ${row.model}" aria-expanded="false" data-open="${row.model}">Breakdown</button>
       </td>
       <td data-label="Hardware">
         <div class="hw-name">${HARDWARE.name}</div>
@@ -195,7 +193,7 @@ function rowMarkup(row) {
         </div>
       </td>
     </tr>
-    <tr class="breakdown" data-for="${row.model}">
+    <tr class="breakdown" id="detail-${RESULTS.findIndex((item) => item.model === row.model)}" data-for="${row.model}" hidden>
       <td colspan="4">
         <div class="breakdown-clip">
           <div>
@@ -229,6 +227,7 @@ function percent(value, max) {
 }
 
 function render() {
+  const focusedControl = document.activeElement;
   const { visible, max } = rows();
   if (!body.querySelector("tr.result")) {
     body.innerHTML = RESULTS.map((row) => rowMarkup({ ...row, place: 0 })).join("");
@@ -253,7 +252,9 @@ function render() {
     const open = state.open === row.model;
     const button = tr.querySelector(".more");
     button.setAttribute("aria-expanded", String(open));
+    button.setAttribute("aria-label", `${open ? "Hide" : "Show"} breakdown for ${row.model}`);
     button.textContent = open ? "Hide breakdown" : "Breakdown";
+    detail.hidden = !open;
     detail.classList.toggle("is-open", open);
     body.appendChild(tr);
     body.appendChild(detail);
@@ -264,6 +265,7 @@ function render() {
     const tr = resultRow(row.model);
     const detail = tr.nextElementSibling;
     tr.hidden = true;
+    detail.hidden = true;
     detail.classList.remove("is-open");
     body.appendChild(tr);
     body.appendChild(detail);
@@ -276,11 +278,16 @@ function render() {
     th.setAttribute("aria-sort", active ? (state.dir === "asc" ? "ascending" : "descending") : "none");
   });
 
+  document.querySelector("#mobile-sort").value = `${state.sort}:${state.dir}`;
+
   const sortLabel = state.sort === "model" ? "model name" : "speed";
   const dirLabel = state.sort === "model"
     ? state.dir === "asc" ? "A to Z" : "Z to A"
     : state.dir === "desc" ? "fastest first" : "slowest first";
   live.textContent = `${visible.length} models, sorted by ${sortLabel}, ${dirLabel}.`;
+  if (body.contains(focusedControl) && document.activeElement !== focusedControl) {
+    focusedControl.focus({ preventScroll: true });
+  }
 }
 
 function placeThumbs() {
@@ -334,6 +341,11 @@ document.querySelectorAll("[data-sort]").forEach((button) => {
   });
 });
 
+document.querySelector("#mobile-sort").addEventListener("change", (event) => {
+  [state.sort, state.dir] = event.target.value.split(":");
+  render();
+});
+
 body.addEventListener("click", (event) => {
   const button = event.target.closest("[data-open]");
   if (!button) return;
@@ -349,7 +361,12 @@ async function bindCopyButton(button, text) {
       await navigator.clipboard.writeText(text);
       button.textContent = "Copied";
     } catch {
-      button.textContent = "Select the line";
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(document.querySelector(".codeblock pre code"));
+      selection.removeAllRanges();
+      selection.addRange(range);
+      button.textContent = "Press Ctrl/Cmd+C";
     }
     setTimeout(() => {
       button.textContent = "Copy";
@@ -360,10 +377,6 @@ async function bindCopyButton(button, text) {
 bindCopyButton(
   document.querySelector("#copy-code"),
   "compiled = torch.compile(\n    model,\n    backend=megabake.make_backend(),\n)",
-);
-bindCopyButton(
-  document.querySelector("#copy-clone"),
-  "git clone https://github.com/megabake/megakernels.git",
 );
 
 const board = document.querySelector(".board");

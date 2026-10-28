@@ -10,17 +10,17 @@ Numbers are batch-1 bf16 decode on an NVIDIA H200 MIG `3g.71gb` slice (60 SMs), 
 
 ## Download megakernels
 
-Published decode kernels for the leaderboard rows live in [megabake/megakernels](https://github.com/megabake/megakernels). The site’s Download section links there; clone with:
-
-```bash
-git clone https://github.com/megabake/megakernels.git
-```
+Published decode kernels live in [megabake/megakernels](https://github.com/megabake/megakernels). The site’s Download section lists each model with a one-click zip (`module.py`, `report.json`, `source_map.json`) fetched from that repo — no clone required.
 
 - **Pipelined** overlaps host work with the previous kernel.
 - **Synchronized** includes host work on the call.
-- **Faster / Slower** compares MegaBake with a CUDA graph of Inductor on the same model.
+- **Faster / Slower** requires at least a 10% speed difference versus CUDA-graphed Inductor. **Close** is within 10%; all three filters use the same thresholds as the badges.
 
 The headline 14× and 5.6× figures are against eager PyTorch and default `torch.compile`. The table uses the later graphed-Inductor baseline, so those ratios are smaller.
+
+The leaderboard intentionally preserves the full eight-model 21 October run, including regressions.
+Download packages are pinned to megakernels revision `4f5f3b77d8af3c140ab9c0c7ffc60776f753185e`; their reports include later measurements and are not the leaderboard dataset.
+They require model weights, compatible hardware, and the corresponding MegaBake runtime. Hub distribution is a proposal.
 
 ## Run locally
 
@@ -38,5 +38,10 @@ Then visit http://127.0.0.1:8765/.
 index.html        page
 css/site.css      layout and type
 js/board.js       leaderboard data and controls
+js/download.js    per-kernel zip downloads
 assets/           mark and favicon
 ```
+
+## Validation
+
+Run `node --test tests/download.test.cjs` to check ZIP integrity, pinned package downloads, and failure recovery.
