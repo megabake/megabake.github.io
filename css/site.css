@@ -777,3 +777,14 @@ table { width: 100%; border-collapse: collapse; }
 .more { display: inline-flex; align-items: center; min-height: 44px; }
 .kernel-browse { display: inline-flex; align-items: center; min-height: 44px; }
 .kernel-download { min-height: 44px; }
+
+/* Desktop emphasizes the speedup; phone cards retain their existing hierarchy. */
+.desktop-comparison { display: none; }
+@media (min-width: 681px) {
+  .desktop-comparison { display: inline; }
+  .mobile-comparison { display: none; }
+  .board .speed-num { font-size: 0.95rem; }
+  .board .speed-num > span:not(.tok) { font-size: 0.65rem; }
+  .board .speed-meta { font-size: 0.75rem; }
+  .board .chip { font-size: 1.15rem; padding: 0.25rem 0.65rem; margin-block: 0.5rem 0.25rem; }
+}

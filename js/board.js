@@ -145,6 +145,12 @@ function verdictLabel(kind, speedup) {
   return "Within 10%";
 }
 
+function multiplierLabel(kind, speedup) {
+  if (kind === "ahead") return `${speedup.toFixed(2)}× faster`;
+  if (kind === "behind") return `${(1 / speedup).toFixed(2)}× slower`;
+  return "Within 10%";
+}
+
 function rows() {
   const decorated = RESULTS.map((row) => {
     const { us, base } = pair(row);
@@ -185,7 +191,7 @@ function rowMarkup(row) {
       <td data-label="Speed">
         <div class="speed-num"><span class="tok">0</span> <span>tok/s</span></div>
         <div class="speed-meta"><span class="ms">0.00</span> ms/token</div>
-        <div class="chip"></div>
+        <div class="chip"><span class="desktop-comparison"></span><span class="mobile-comparison"></span></div>
         <div class="bars">
           <div class="bar-row"><em>MegaBake</em><div class="track"><i class="bake"></i></div><span class="bake-tok"></span></div>
           <div class="bar-row"><em>Inductor</em><div class="track"><i class="base"></i></div><span class="base-tok"></span></div>
@@ -248,7 +254,8 @@ function render() {
     tr.querySelector(".base-tok").textContent = formatTok(row.baseSpeed);
     const chip = tr.querySelector(".chip");
     chip.className = `chip ${row.kind}`;
-    chip.textContent = verdictLabel(row.kind, row.speedup);
+    chip.querySelector(".desktop-comparison").textContent = multiplierLabel(row.kind, row.speedup);
+    chip.querySelector(".mobile-comparison").textContent = verdictLabel(row.kind, row.speedup);
     tr.querySelector(".bake").style.width = `${percent(row.speed, max)}%`;
     tr.querySelector(".base").style.width = `${percent(row.baseSpeed, max)}%`;
     const open = state.open === row.model;
