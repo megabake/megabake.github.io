@@ -42,3 +42,15 @@ test('pipelined timing uses the same selected baseline and recalculates speedup'
   assert.equal(vm.runInContext('pair(RESULTS[0]).base', context), vm.runInContext('PUBLISHED_KERNELS[0].baseline.pipelined_call_us', context));
   assert.equal(vm.runInContext('multiplierLabel(rows().visible[0].kind, rows().visible[0].speedup)', context), '1.85× faster');
 });
+
+test('published HTML contains the benchmark values and package links without JavaScript', () => {
+  const html = fs.readFileSync('index.html', 'utf8');
+  assert.equal((html.match(/<tr class="result" /g) || []).length, 6);
+  assert.equal((html.match(/<li class="kernel-row">/g) || []).length, 6);
+  assert.match(html, /class="tok">912<\/span>/);
+  assert.match(html, /class="desktop-comparison">2\.09× faster<\/span>/);
+  const schema = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
+  assert.equal(schema['@graph'][0].url, canonical);
+  assert.ok(fs.readFileSync('sitemap.xml', 'utf8').includes(`<loc>${canonical}</loc>`));
+});

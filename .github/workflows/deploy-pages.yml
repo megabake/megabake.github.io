@@ -24,6 +24,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Prepare and verify site
+        run: |
+          node scripts/render-static.cjs
+          node --test tests/*.test.cjs
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

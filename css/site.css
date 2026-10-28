@@ -135,7 +135,7 @@ code {
   align-items: center;
 }
 .hero > * { min-width: 0; }
-#leaderboard, #pitch, #download, #method, #problem, #why, #headroom {
+main section[id] {
   scroll-margin-top: var(--header-offset);
 }
 .kicker {
@@ -792,3 +792,6 @@ table { width: 100%; border-collapse: collapse; }
 }
 
 .breakdown a { color: var(--caramel); }
+
+.model-name { display: inline-block; text-decoration: none; }
+a.model-name:hover { color: var(--caramel); text-decoration: underline; }

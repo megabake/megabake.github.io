@@ -100,11 +100,14 @@ function rows() {
 }
 
 function rowMarkup(row) {
+  const { us, base } = pair(row);
+  const speedup = base / us;
+  const kind = verdict(speedup);
   return `
     <tr class="result" data-model="${row.model}">
       <td class="col-rank-cell" data-label="Rank"><span class="rank">${row.place}</span></td>
       <td data-label="Model">
-        <div class="model-name">${row.model}</div>
+        <a class="model-name" href="${row.source}">${row.model}</a>
         <div class="model-note">${row.note}</div>
       </td>
       <td data-label="Hardware">
@@ -112,12 +115,12 @@ function rowMarkup(row) {
         <div class="hw-detail">${HARDWARE.detail}</div>
       </td>
       <td data-label="Speed">
-        <div class="speed-num"><span class="tok">0</span> <span>tok/s</span></div>
-        <div class="speed-meta"><span class="ms">0.00</span> ms/token</div>
-        <div class="chip"><span class="desktop-comparison"></span><span class="mobile-comparison"></span></div>
+        <div class="speed-num"><span class="tok">${formatTok(tokens(us))}</span> <span>tok/s</span></div>
+        <div class="speed-meta"><span class="ms">${formatMs(us)}</span> ms/token</div>
+        <div class="chip ${kind}"><span class="desktop-comparison">${multiplierLabel(kind, speedup)}</span><span class="mobile-comparison">${verdictLabel(kind, speedup)}</span></div>
         <div class="bars">
-          <div class="bar-row"><em>MegaBake</em><div class="track"><i class="bake"></i></div><span class="bake-tok"></span></div>
-          <div class="bar-row"><em>Inductor</em><div class="track"><i class="base"></i></div><span class="base-tok"></span></div>
+          <div class="bar-row"><em>MegaBake</em><div class="track"><i class="bake" style="width: ${percent(tokens(us), rows().max)}%"></i></div><span class="bake-tok">${formatTok(tokens(us))}</span></div>
+          <div class="bar-row"><em>Inductor</em><div class="track"><i class="base" style="width: ${percent(tokens(base), rows().max)}%"></i></div><span class="base-tok">${formatTok(tokens(base))}</span></div>
         </div>
         <button type="button" class="more" aria-controls="detail-${RESULTS.findIndex((item) => item.model === row.model)}" aria-label="Breakdown for ${row.model}" aria-expanded="false" data-open="${row.model}">Breakdown</button>
       </td>

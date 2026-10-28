@@ -20,7 +20,7 @@ Refresh the snapshot with a full repository commit SHA:
 python3 scripts/update-benchmarks.py <40-character-commit-sha>
 ```
 
-After refreshing, check the displayed date and headline numbers in `index.html` against the new reports and run the checks below.
+After refreshing, run `node scripts/render-static.cjs` to refresh the static leaderboard and package links. Then check the displayed date and headline numbers in `index.html` against the new reports and run the checks below.
 
 The downloadable ZIP contains `module.py`, `report.json`, and `source_map.json` from the same repository revision. Kernels require model weights, compatible hardware, and the matching MegaBake runtime. Hub distribution remains a proposal.
 
@@ -39,3 +39,9 @@ node --test tests/*.test.cjs
 ```
 
 Checks cover source benchmark values, baseline selection, timing modes, ZIP integrity, pinned downloads, and failure recovery.
+
+## Search and sharing
+
+The canonical URL, Open Graph/Twitter metadata, and JSON-LD are in `index.html`. `sitemap.xml` lists the canonical page. The deploy workflow pre-renders the benchmark rows and package links before validation, so content is readable without JavaScript.
+
+When moving to the root domain, update the canonical URL, sharing URLs, and JSON-LD URLs together, then run `node scripts/render-static.cjs` to regenerate the sitemap. The current canonical remains the existing live `/website/` URL until that move is complete. Sitemap submission and search indexing require the site owner's Search Console account.
