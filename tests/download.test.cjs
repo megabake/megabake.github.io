@@ -17,7 +17,9 @@ function load(fetch) {
     },
     window: { setTimeout(fn, delay) { timers.push({ fn, delay }); return timers.length; }, clearTimeout() {} },
   });
-  vm.runInContext(fs.readFileSync('js/download.js', 'utf8'), context);
+  for (const file of ['js/benchmark-data.js', 'js/benchmarks.js', 'js/download.js']) {
+    vm.runInContext(fs.readFileSync(file, 'utf8'), context);
+  }
   return { api: vm.runInContext('({zipStore, crc32, downloadKernel, KERNELS, KERNEL_REVISION})', context), status, timers, blobs };
 }
 

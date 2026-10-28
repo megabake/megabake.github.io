@@ -1,47 +1,41 @@
 # MegaBake
 
-Site for [MegaBake](https://github.com/megabake/megabake), a PyTorch compiler backend that turns an unmodified Hugging Face model into one persistent CUDA kernel.
+Website for [MegaBake](https://github.com/megabake/megabake), a PyTorch compiler backend for persistent CUDA kernels.
 
-The page carries the project pitch and a decode leaderboard. Each row is a model, the hardware it ran on, and its speed in tokens per second.
+## Benchmark source
 
-## Leaderboard
+The leaderboard and downloads share the six published H200 decode packages from [megabake/megakernels](https://github.com/megabake/megakernels), pinned to revision `4f5f3b77d8af3c140ab9c0c7ffc60776f753185e`, measured 24 October 2026.
 
-Numbers are batch-1 bf16 decode on an NVIDIA H200 MIG `3g.71gb` slice (60 SMs), from the 21 Oct 2026 run in the upstream [ROADMAP.md](https://github.com/megabake/megabake/blob/main/ROADMAP.md). Speed is tokens per second from one token per call.
+`js/benchmark-data.js` contains the original reports. `js/benchmarks.js` derives shared model metadata, timings, and download paths from that snapshot.
 
-## Download megakernels
+- Complete-call timing is selected by default and matches the source README.
+- The baseline is the faster complete call from `inductor_graphed` or `inductor_cudagraphs`. Pipelined comparisons use that same selected baseline.
+- Speed is one million divided by latency in microseconds. Speedup is baseline latency divided by MegaBake latency.
+- Faster / Slower requires a 10% speed difference. Close is within 10%.
+- All rows use batch 1, bf16, and a static 128-token KV cache. Longer-context results use different capacities and are not mixed into this table.
 
-Published decode kernels live in [megabake/megakernels](https://github.com/megabake/megakernels). The site’s Download section lists each model with a one-click zip (`module.py`, `report.json`, `source_map.json`) fetched from that repo. No clone required.
+Refresh the snapshot with a full repository commit SHA:
 
-- **Pipelined** overlaps host work with the previous kernel.
-- **Synchronized** includes host work on the call.
-- **Faster / Slower** requires at least a 10% speed difference versus CUDA-graphed Inductor. **Close** is within 10%; all three filters use the same thresholds as the badges.
+```bash
+python3 scripts/update-benchmarks.py <40-character-commit-sha>
+```
 
-The headline 14× and 5.6× figures are against eager PyTorch and default `torch.compile`. The table uses the later graphed-Inductor baseline, so those ratios are smaller.
+After refreshing, check the displayed date and headline numbers in `index.html` against the new reports and run the checks below.
 
-The leaderboard intentionally preserves the full eight-model 21 October run, including regressions.
-Download packages are pinned to megakernels revision `4f5f3b77d8af3c140ab9c0c7ffc60776f753185e`; their reports include later measurements and are not the leaderboard dataset.
-They require model weights, compatible hardware, and the corresponding MegaBake runtime. Hub distribution is a proposal.
+The downloadable ZIP contains `module.py`, `report.json`, and `source_map.json` from the same repository revision. Kernels require model weights, compatible hardware, and the matching MegaBake runtime. Hub distribution remains a proposal.
 
 ## Run locally
-
-Open `index.html` in a browser, or serve the folder:
 
 ```bash
 python3 -m http.server 8765
 ```
 
-Then visit http://127.0.0.1:8765/.
-
-## Layout
-
-```
-index.html        page
-css/site.css      layout and type
-js/board.js       leaderboard data and controls
-js/download.js    per-kernel zip downloads
-assets/           mark and favicon
-```
+Visit http://127.0.0.1:8765/ or open `index.html` directly.
 
 ## Validation
 
-Run `node --test tests/download.test.cjs` to check ZIP integrity, pinned package downloads, and failure recovery.
+```bash
+node --test tests/*.test.cjs
+```
+
+Checks cover source benchmark values, baseline selection, timing modes, ZIP integrity, pinned downloads, and failure recovery.

@@ -80,34 +80,34 @@
         </figure>
       </section>
 
-      <section class="stats" aria-label="Headline results">
+      <section class="stats" aria-label="Published decode results">
         <article>
           <p class="stat">1<span> launch</span></p>
-          <p>per token. SmolLM-135M issues 1,780 in eager PyTorch and 632 under <code>torch.compile</code>.</p>
+          <p>per decode call. SmolLM-135M uses 842 launches with CUDA-graphed Inductor.</p>
         </article>
         <article>
-          <p class="stat">14×</p>
-          <p>lower latency than eager PyTorch on SmolLM-135M, from 30.6&nbsp;ms to 2.1&nbsp;ms per token.</p>
+          <p class="stat">2.09×</p>
+          <p>decode speedup on SmolLM-135M versus <code>torch.compile</code> with CUDA graphs: 2.29 ms to 1.10 ms.</p>
         </article>
         <article>
-          <p class="stat">5.6×</p>
-          <p>lower per-token latency than <code>torch.compile</code> in its default mode, at the top of the range.</p>
+          <p class="stat">128<span> tokens</span></p>
+          <p>static KV-cache capacity for the published batch-1, bf16 decode comparison.</p>
         </article>
         <article>
-          <p class="stat">8<span> models</span></p>
-          <p>complete Hugging Face decoders, batch-1 decode, bf16, on an H200 60-SM partition.</p>
+          <p class="stat">6<span> models</span></p>
+          <p>published decode packages on an NVIDIA H200 MIG 3g.71gb partition.</p>
         </article>
       </section>
-      <p class="baseline-note">Headline latency gains use earlier eager / default <code>torch.compile</code> baselines.
-        The leaderboard below compares against the stronger CUDA-graphed Inductor baseline.</p>
+      <p class="baseline-note">Measured 24 October 2026. The table and downloads use the same published reports from
+        <a href="https://github.com/megabake/megakernels">megabake/megakernels</a>.</p>
       <section class="board-wrap" id="leaderboard">
         <div class="board">
           <div class="board-head">
             <div>
-              <p class="kicker light">Measured 21 Oct 2026</p>
+              <p class="kicker light">Measured 24 Oct 2026</p>
               <h2>Decode leaderboard</h2>
               <p class="board-intro">
-                Eight models, one GPU. Compare decode speed with CUDA-graphed
+                Six models, one GPU. Compare decode speed with CUDA-graphed
                 Inductor, or open a breakdown for timings and model-specific notes.
               </p>
             </div>
@@ -117,8 +117,8 @@
           <div class="toolbar">
             <div class="segment" role="group" aria-label="Which call time to rank">
               <span class="segment-thumb" aria-hidden="true"></span>
-              <button type="button" data-measure="pipelined" aria-pressed="true">Pipelined</button>
-              <button type="button" data-measure="synced" aria-pressed="false">Synchronized</button>
+              <button type="button" data-measure="pipelined" aria-pressed="false">Pipelined</button>
+              <button type="button" data-measure="synced" aria-pressed="true">Complete call</button>
             </div>
             <div class="segment" role="group" aria-label="Filter models">
               <span class="segment-thumb" aria-hidden="true"></span>
@@ -136,7 +136,7 @@
               </select>
             </label>
             <p class="measure-note" id="measure-note">
-              Pipelined calls overlap host work with the previous kernel.
+              Median complete call, including host and GPU work. Matches the published results.
             </p>
           </div>
 
@@ -146,7 +146,7 @@
             <span class="legend-note">Speed differences within 10% are labeled close. Shared-GPU clock noise is 10–15%.</span>
           </div>
 
-          <noscript><p class="board-intro">Enable JavaScript to explore the leaderboard. All measurements are available in <a href="https://github.com/megabake/megabake/blob/main/ROADMAP.md">the source roadmap</a>.</p></noscript>
+          <noscript><p class="board-intro">Enable JavaScript to explore the leaderboard. All measurements are available in <a href="https://github.com/megabake/megakernels">the published reports</a>.</p></noscript>
           <div class="table-scroll">
             <table>
               <caption class="sr-only">
@@ -171,17 +171,12 @@
           <p class="sr-only" id="live-status" aria-live="polite"></p>
 
           <footer class="board-foot">
-            <p>
-              Source:
-              <a href="https://github.com/megabake/megabake/blob/main/ROADMAP.md">ROADMAP.md</a>
-              §7, <code>benchmarks/full_model.py</code>. H200 MIG 3g.71gb, 60 SMs, about 2.2 TB/s. Batch 1, bf16, one token per call; 40 warm calls, KV capacity 128,
-              context under 100 tokens. “Call” time is the median. Kernel time is
-              profiled GPU time of one call. Inductor’s decode baseline is a
-              hand-captured CUDA graph. The slice is shared with other tenants,
-              so single-call times move 10–15%. 4-token prefill is still behind
-              CUDA-graphed Inductor on every model. Qwen3.5 prefill does not
-              compile yet (<code>cumsum</code>).
-            </p>
+            <p>Source: <a href="https://github.com/megabake/megakernels/tree/4f5f3b77d8af3c140ab9c0c7ffc60776f753185e">megabake/megakernels, 24 October snapshot</a>.
+              Batch 1, bf16, one token per call, static 128-token KV cache, 40 samples.
+              The baseline is a hand-captured CUDA graph of <code>torch.compile(model, fullgraph=True)</code>,
+              or Inductor’s <code>reduce-overhead</code> mode where faster.
+              Speedup is baseline latency divided by MegaBake latency. Open each breakdown for its report.
+              Long-context results use different cache sizes and are not mixed into this table.</p>
           </footer>
         </div>
       </section>
@@ -198,7 +193,7 @@
           </p>
           <p class="artifact-note">These are generated CuTe DSL sources, not standalone binaries or model weights.
             You need the model weights, a compatible Hopper GPU, and the matching MegaBake runtime.
-            Package reports describe later runs; their timings can differ from the 21 October leaderboard.</p>
+            The package reports are the source of the leaderboard timings above. Upstream notes that the recorded compiler commit may have additional working-tree changes.</p>
         </div>
 
         <ul class="kernel-list" id="kernel-list" aria-label="Published megakernels"></ul>
@@ -225,7 +220,7 @@
         </div>
         <div class="evaluation-details">
           <article><h3>Supported today</h3><p>Hopper / SM90, bf16, static shape buckets, and bounded contiguous decode KV state.
-            Eight decoders in this benchmark; performance and numerical agreement vary by model.
+            Six published decoders in this benchmark; performance and numerical agreement vary by model.
             Broader cache formats and production serving need further work.</p></article>
           <article><h3>Reproduce before integrating</h3><p>Start with the pinned revision in a package’s <code>report.json</code>.
             Check outputs across advancing decode calls and compare the complete call with CUDA-graphed Inductor
@@ -292,6 +287,8 @@
       </div>
     </footer>
 
+    <script src="js/benchmark-data.js"></script>
+    <script src="js/benchmarks.js"></script>
     <script src="js/board.js"></script>
     <script src="js/download.js"></script>
   </body>

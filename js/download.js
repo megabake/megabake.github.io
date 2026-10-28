@@ -1,49 +1,10 @@
-const KERNEL_REVISION = "4f5f3b77d8af3c140ab9c0c7ffc60776f753185e";
+const KERNEL_REVISION = BENCHMARK_DATA.revision;
 const KERNEL_ROOT =
   `https://raw.githubusercontent.com/megabake/megakernels/${KERNEL_REVISION}/kernels`;
 const KERNEL_GPU = "nvidia-h200-mig-3g-71gb";
 const KERNEL_MODE = "decode";
 const KERNEL_FILES = ["module.py", "report.json", "source_map.json"];
-
-// Pin all package files to one verified repository snapshot.
-const KERNELS = [
-  {
-    id: "HuggingFaceTB--SmolLM-135M",
-    name: "SmolLM-135M",
-    org: "HuggingFaceTB",
-    hardware: "H200 · decode",
-  },
-  {
-    id: "Qwen--Qwen2-0.5B",
-    name: "Qwen2-0.5B",
-    org: "Qwen",
-    hardware: "H200 · decode",
-  },
-  {
-    id: "jukofyork--DeepSeek-V3-DRAFT-0.6B-v3.0",
-    name: "DeepSeek-V3 draft 0.6B",
-    org: "jukofyork",
-    hardware: "H200 · decode",
-  },
-  {
-    id: "HuggingFaceTB--SmolLM-1.7B",
-    name: "SmolLM-1.7B",
-    org: "HuggingFaceTB",
-    hardware: "H200 · decode",
-  },
-  {
-    id: "reflection--Beam-1.0-501B-A23B-DFlash2",
-    name: "Beam DFlash2 draft",
-    org: "reflection",
-    hardware: "H200 · decode",
-  },
-  {
-    id: "google--gemma-2b",
-    name: "gemma-2b",
-    org: "google",
-    hardware: "H200 · decode",
-  },
-];
+const KERNELS = PUBLISHED_KERNELS;
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);

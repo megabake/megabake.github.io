@@ -3,106 +3,29 @@ const HARDWARE = {
   detail: "MIG 3g.71gb · 60 SMs · bf16",
 };
 
-// Microseconds from ROADMAP.md §7, measured 2026-10-21.
-// pipelined / synced are MegaBake. base* are CUDA-graphed Inductor.
-const RESULTS = [
-  {
-    model: "SmolLM-135M",
-    note: "Llama blocks · bit-exact vs eager",
-    pipelined: 1287,
-    basePipelined: 2013,
-    synced: 1956,
-    baseSynced: 2269,
-    kernel: 1282,
-    detail:
-      "Eager PyTorch issues 1,780 kernel launches per token on this model, and torch.compile issues 632. MegaBake issues 1. The elevator pitch records 30.6 ms eager and 2.1 ms MegaBake on an earlier end-to-end measurement.",
-  },
-  {
-    model: "SmolLM-1.7B",
-    note: "Llama blocks · GEMMs within 2.6e-4",
-    pipelined: 2704,
-    basePipelined: 3007,
-    synced: 3186,
-    baseSynced: 3096,
-    kernel: 2816,
-    detail:
-      "Non-GEMM regions match PyTorch on their own inputs. GEMMs differ by accumulation order only, at most 2.6e-4 relative.",
-  },
-  {
-    model: "Qwen2-0.5B",
-    note: "q/k/v biases in the GEMM epilogue",
-    pipelined: 1379,
-    basePipelined: 2152,
-    synced: 2167,
-    baseSynced: 2362,
-    kernel: 1395,
-    detail:
-      "Decode matches eager bf16 over advancing calls. The pitch records this model, with the DeepSeek-V3 draft, at 4.5× versus default torch.compile.",
-  },
-  {
-    model: "DeepSeek-V3 draft 0.6B",
-    note: "DeepSeek-V3-family draft",
-    pipelined: 1398,
-    basePipelined: 2133,
-    synced: 2195,
-    baseSynced: 2352,
-    kernel: 1416,
-    detail:
-      "One of the two draft models in the eight-model set. Pipelined decode is ahead of graphed Inductor on this run.",
-  },
-  {
-    model: "Beam DFlash2 draft",
-    note: "DeepSeek-V3-family draft",
-    pipelined: 2527,
-    basePipelined: 2665,
-    synced: 2981,
-    baseSynced: 2723,
-    kernel: 2553,
-    detail:
-      "The second draft model. Pipelined decode is a few percent ahead of graphed Inductor, inside the clock noise of this shared slice. The synchronized call is behind.",
-  },
-  {
-    model: "gemma-2b",
-    note: "Gemma 2 decoder",
-    pipelined: 3450,
-    basePipelined: 3611,
-    synced: 4096,
-    baseSynced: 3692,
-    kernel: 3464,
-    detail:
-      "Pipelined decode is just ahead of graphed Inductor. The synchronized call, which includes host work, is behind.",
-  },
-  {
-    model: "Gemma-3-270M",
-    note: "Declared attention · still tuning",
-    pipelined: 1858,
-    basePipelined: 1412,
-    synced: 2537,
-    baseSynced: 1584,
-    kernel: 1872,
-    detail:
-      "Decode compiles through the declared attention op. On this run it is about 1.3× slower than graphed Inductor end to end. The pitch still lists Gemma 3 as needing tuning.",
-  },
-  {
-    model: "Qwen3.5-0.8B",
-    note: "Prefill does not compile yet",
-    pipelined: 5061,
-    basePipelined: 2312,
-    synced: 5931,
-    baseSynced: 2489,
-    kernel: 5057,
-    detail:
-      "Decode runs, and it is about 2.2× slower than graphed Inductor here. Prefill fails to compile because cumsum is not lowered. The gated delta rule is not declared yet.",
-  },
-];
+// Microseconds from the same published reports used by the downloads.
+const RESULTS = PUBLISHED_KERNELS.map((item) => ({
+  model: item.name,
+  note: `${item.org} · ${item.modelRevision.slice(0, 7)}`,
+  pipelined: item.bake.pipelined_call_us,
+  basePipelined: item.baseline.pipelined_call_us,
+  synced: item.bake.complete_call_us,
+  baseSynced: item.baseline.complete_call_us,
+  kernel: item.bake.kernel_duration_us,
+  launches: item.baseline.launch_count,
+  source: item.source,
+  measuredAt: item.report.published.measured_at,
+  runtimeRevision: item.report.published.megabake_commit,
+  baselineLabel: item.baselineKey === "inductor_graphed" ? "Hand-captured CUDA graph" : "Inductor reduce-overhead",
+}));
 
 const MEASURE_COPY = {
   pipelined: "Pipelined calls overlap host work with the previous kernel.",
-  synced: "Synchronized calls include host work. That overhead is about 600 µs.",
+  synced: "Median complete call, including host and GPU work. Matches the published results.",
 };
 
 const state = {
-  measure: "pipelined",
+  measure: "synced",
   filter: "all",
   sort: "speed",
   dir: "desc",
@@ -213,11 +136,12 @@ function rowMarkup(row) {
                 <dd>${formatMs(row.synced)} ms · Inductor ${formatMs(row.baseSynced)} ms</dd>
               </div>
               <div>
-                <dt>GPU kernel</dt>
-                <dd>${formatMs(row.kernel)} ms</dd>
+                <dt>Kernel launches</dt>
+                <dd>${row.launches} → 1 per call</dd>
               </div>
             </dl>
-            <p>${row.detail}</p>
+            <p>Measured ${row.measuredAt}. Baseline: ${row.baselineLabel}. MegaBake revision: <code>${row.runtimeRevision}</code>.</p>
+            <p><a href="${row.source}">View the source report ↗</a></p>
           </div>
         </div>
       </td>
