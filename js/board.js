@@ -177,7 +177,6 @@ function rowMarkup(row) {
       <td data-label="Model">
         <div class="model-name">${row.model}</div>
         <div class="model-note">${row.note}</div>
-        <button type="button" class="more" aria-controls="detail-${RESULTS.findIndex((item) => item.model === row.model)}" aria-label="Breakdown for ${row.model}" aria-expanded="false" data-open="${row.model}">Breakdown</button>
       </td>
       <td data-label="Hardware">
         <div class="hw-name">${HARDWARE.name}</div>
@@ -188,9 +187,10 @@ function rowMarkup(row) {
         <div class="speed-meta"><span class="ms">0.00</span> ms/token</div>
         <div class="chip"></div>
         <div class="bars">
-          <div class="bar-row"><em>MegaBake</em><div class="track"><i class="bake"></i></div></div>
-          <div class="bar-row"><em>Inductor</em><div class="track"><i class="base"></i></div></div>
+          <div class="bar-row"><em>MegaBake</em><div class="track"><i class="bake"></i></div><span class="bake-tok"></span></div>
+          <div class="bar-row"><em>Inductor</em><div class="track"><i class="base"></i></div><span class="base-tok"></span></div>
         </div>
+        <button type="button" class="more" aria-controls="detail-${RESULTS.findIndex((item) => item.model === row.model)}" aria-label="Breakdown for ${row.model}" aria-expanded="false" data-open="${row.model}">Breakdown</button>
       </td>
     </tr>
     <tr class="breakdown" id="detail-${RESULTS.findIndex((item) => item.model === row.model)}" data-for="${row.model}" hidden>
@@ -244,6 +244,8 @@ function render() {
     tr.querySelector(".rank").classList.toggle("gold", row.place === 1);
     tr.querySelector(".tok").textContent = formatTok(row.speed);
     tr.querySelector(".ms").textContent = formatMs(row.us);
+    tr.querySelector(".bake-tok").textContent = formatTok(row.speed);
+    tr.querySelector(".base-tok").textContent = formatTok(row.baseSpeed);
     const chip = tr.querySelector(".chip");
     chip.className = `chip ${row.kind}`;
     chip.textContent = verdictLabel(row.kind, row.speedup);

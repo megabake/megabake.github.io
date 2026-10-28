@@ -29,7 +29,7 @@
         <a href="#pitch">Overview</a>
         <a href="#leaderboard">Leaderboard</a>
         <a href="#download">Download</a>
-        <a href="#method">Method</a>
+        <a href="#evaluation">Integration</a>
       </nav>
       <a class="github" href="https://github.com/megabake/megabake">
         <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -107,14 +107,11 @@
               <p class="kicker light">Measured 21 Oct 2026</p>
               <h2>Decode leaderboard</h2>
               <p class="board-intro">
-                Batch-1 decode, one token per call. Speed is tokens per second.
-                Every row is the same machine: an NVIDIA H200 MIG
-                3g.71gb slice, 60 SMs, about 2.2&nbsp;TB/s, bf16.
-                Ranked by MegaBake speed. A smaller model can post a higher
-                tokens/sec and still trail Inductor on that same model.
+                Eight models, one GPU. Compare decode speed with CUDA-graphed
+                Inductor, or open a breakdown for timings and model-specific notes.
               </p>
             </div>
-            <p class="stamp">H200 · bf16 · batch 1</p>
+            <p class="stamp">H200 MIG · 60 SMs · bf16 · batch 1</p>
           </div>
 
           <div class="toolbar">
@@ -146,7 +143,7 @@
           <div class="legend">
             <span><i class="swatch bake"></i> MegaBake</span>
             <span><i class="swatch base"></i> CUDA-graphed Inductor</span>
-            <span class="legend-note">Faster / Slower means at least a 10% difference in speed. Close is within 10%; the shared slice has 10–15% clock noise.</span>
+            <span class="legend-note">Speed differences within 10% are labeled close. Shared-GPU clock noise is 10–15%.</span>
           </div>
 
           <noscript><p class="board-intro">Enable JavaScript to explore the leaderboard. All measurements are available in <a href="https://github.com/megabake/megabake/blob/main/ROADMAP.md">the source roadmap</a>.</p></noscript>
@@ -177,7 +174,7 @@
             <p>
               Source:
               <a href="https://github.com/megabake/megabake/blob/main/ROADMAP.md">ROADMAP.md</a>
-              §7, <code>benchmarks/full_model.py</code>, 40 warm calls, KV capacity 128,
+              §7, <code>benchmarks/full_model.py</code>. H200 MIG 3g.71gb, 60 SMs, about 2.2 TB/s. Batch 1, bf16, one token per call; 40 warm calls, KV capacity 128,
               context under 100 tokens. “Call” time is the median. Kernel time is
               profiled GPU time of one call. Inductor’s decode baseline is a
               hand-captured CUDA graph. The slice is shared with other tenants,
@@ -238,113 +235,6 @@
           <article><h3>Proposed Hub integration</h3><p>Publish device bodies and revision-specific megakernels with explicit hardware,
             shape, runtime, and numerical requirements. This is an integration proposal; the downloadable
             packages currently live on GitHub.</p></article>
-        </div>
-      </section>
-
-      <section class="prose" id="problem">
-        <p class="kicker">The problem</p>
-        <h2>Decode is a long chain of kernel launches.</h2>
-        <p>
-          Autoregressive decoding produces one token per forward pass. At small
-          batch sizes that pass is memory-bandwidth bound: the GPU streams every
-          weight from HBM once per token, so the floor is weight bytes divided
-          by memory bandwidth. A decode step in eager PyTorch is hundreds to
-          thousands of separate launches. <code>torch.compile</code> fuses some
-          of them, and CUDA graphs remove most of the CPU launch overhead. The
-          GPU still runs a chain of kernels, and every boundary costs something.
-        </p>
-        <ol class="costs">
-          <li>
-            <h3>A full barrier and a memory flush</h3>
-            <p>Every streaming multiprocessor waits for the slowest thread block before downstream work can start, including work whose inputs are already finished.</p>
-          </li>
-          <li>
-            <h3>Cold pipelines</h3>
-            <p>Each matrix multiply refills its load pipeline from empty. The next layer waits for its own launch, and shared memory does not survive across kernels.</p>
-          </li>
-          <li>
-            <h3>Stranded SMs</h3>
-            <p>A small projection that occupies part of the GPU leaves the rest idle, and that idle capacity cannot pick up future work.</p>
-          </li>
-        </ol>
-        <p>
-          The known answer is a megakernel: one persistent kernel that runs the
-          whole model, with fine-grained dependencies in place of kernel
-          boundaries. Hand-written megakernels have shown large decode speedups
-          on H100 and B200. Each one takes specialists weeks to months, is tied
-          to one architecture on one GPU, and goes stale with the next model
-          release.
-        </p>
-      </section>
-
-      <section class="prose" id="method">
-        <p class="kicker">What MegaBake does</p>
-        <h2>The megakernel is a compiler output.</h2>
-        <ol class="steps">
-          <li>
-            <h3>Capture through PyTorch’s own stack</h3>
-            <p>TorchDynamo captures the call. AOT and post-grad passes normalize the FX graph. MegaBake takes the graph where Inductor would lower it, and keeps guards, aliasing, mutations, and outputs.</p>
-          </li>
-          <li>
-            <h3>Recover what the graph computes</h3>
-            <p>Regions carry explicit layouts, dependencies, state effects, and numeric requirements. Coverage comes from operator families and declared ops, including attention through transformers’ <code>AttentionInterface</code>. A new architecture compiles by extending those families.</p>
-          </li>
-          <li>
-            <h3>Compose tuned device code</h3>
-            <p>Each region maps to a body in NVIDIA’s CuTe DSL. Matrix multiplies use a Hopper TMA/WGMMA pipeline, with a small-batch variant. Decode attention splits long contexts across SMs. Norms, RoPE, and activations fold into their consumers. The tuned pipeline stays intact inside the composed kernel.</p>
-          </li>
-          <li>
-            <h3>Plan one persistent kernel</h3>
-            <p>MegaBake decides which tiles each SM computes, when, in which shared or global buffers, and with what synchronization.</p>
-          </li>
-          <li>
-            <h3>Verify before use</h3>
-            <p>The captured graph is the correctness reference. An unsupported graph fails with a clear message, or the whole invocation falls back to <code>torch.compile</code>. Numerics stay labeled either way.</p>
-          </li>
-        </ol>
-      </section>
-
-      <section class="prose" id="headroom">
-        <p class="kicker">Still on the table</p>
-        <h2>The launch cost is the first slice of the gain.</h2>
-        <p>
-          So far MegaBake has mostly removed launch and dispatch cost. Larger
-          gains come from schedules a chain of kernels cannot express. These
-          are engineering estimates, not measurements yet. Bandwidth use is
-          about 50% on SmolLM-1.7B.
-        </p>
-        <div class="table-scroll light-scroll">
-          <table class="plain">
-            <thead>
-              <tr>
-                <th scope="col">Optimization</th>
-                <th scope="col">What it changes</th>
-                <th scope="col">Estimated gain</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">Tile-level dataflow</th>
-                <td>Each SM waits only on the tiles it consumes, using event counters in place of grid-wide barriers.</td>
-                <td>5–30% lower GPU time</td>
-              </tr>
-              <tr>
-                <th scope="row">Cross-layer weight streaming</th>
-                <td>Waiting SMs prefetch the next layer’s weights while the current layer computes, so GEMM pipelines stay warm across layers.</td>
-                <td>A further 8–15% on larger models</td>
-              </tr>
-              <tr>
-                <th scope="row">On-device multi-step decoding</th>
-                <td>Sampling and the next embedding run inside the kernel, so several tokens are generated per launch.</td>
-                <td>10–25% per token end to end</td>
-              </tr>
-              <tr>
-                <th scope="row">In-kernel speculative verification</th>
-                <td>At batch 1, verifying 8 draft tokens costs about the same weight traffic as verifying 1.</td>
-                <td>2–4× tokens per second</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </section>
 
