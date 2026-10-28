@@ -1,5 +1,9 @@
 # MegaBake
 
+Live site: https://megabake.github.io/
+
+Source repository: https://github.com/megabake/megabake.github.io
+
 Website for [MegaBake](https://github.com/megabake/megabake), a PyTorch compiler backend for persistent CUDA kernels.
 
 ## Benchmark source
@@ -44,4 +48,4 @@ Checks cover source benchmark values, baseline selection, timing modes, ZIP inte
 
 The canonical URL, Open Graph/Twitter metadata, and JSON-LD are in `index.html`. `sitemap.xml` lists the canonical page. CSS and JavaScript URLs carry content hashes to refresh browser and crawler caches after changes. The deploy workflow pre-renders the benchmark rows and package links before validation, so content is readable without JavaScript.
 
-When moving to the root domain, update the canonical URL, sharing URLs, and JSON-LD URLs together, then run `node scripts/render-static.cjs` to regenerate the sitemap. The current canonical remains the existing live `/website/` URL until that move is complete. Sitemap submission and search indexing require the site owner's Search Console account.
+The site is published at the organization root, `https://megabake.github.io/`. Canonical, sharing, JSON-LD, robots, and sitemap URLs use this address. `website/index.html` redirects the old project-site path to the root while preserving query parameters and section links. Sitemap submission and search indexing require the site owner's Search Console account.

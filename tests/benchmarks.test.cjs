@@ -51,6 +51,19 @@ test('published HTML contains the benchmark values and package links without Jav
   assert.match(html, /class="desktop-comparison">2\.09× faster<\/span>/);
   const schema = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
   const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
+  assert.equal(canonical, 'https://megabake.github.io/');
+  assert.ok(fs.readFileSync('robots.txt', 'utf8').includes(`Sitemap: ${canonical}sitemap.xml`));
   assert.equal(schema['@graph'][0].url, canonical);
   assert.ok(fs.readFileSync('sitemap.xml', 'utf8').includes(`<loc>${canonical}</loc>`));
+});
+
+
+test('legacy project URL redirects to the root and preserves query and section', () => {
+  const html = fs.readFileSync('website/index.html', 'utf8');
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  let destination;
+  vm.runInNewContext(script, { window: { location: {
+    search: '?v=latest', hash: '#leaderboard', replace(url) { destination = url; },
+  } } });
+  assert.equal(destination, 'https://megabake.github.io/?v=latest#leaderboard');
 });
