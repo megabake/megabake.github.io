@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MegaBake — one persistent CUDA kernel for Hugging Face decode</title>
+    <title>MegaBake | CUDA compiler for Hugging Face models</title>
     <meta
       name="description"
       content="MegaBake is an open-source PyTorch compiler backend. It compiles supported Hugging Face models into one persistent CUDA megakernel. Decode leaderboard from measured H200 results."
@@ -49,7 +49,7 @@
           <h1>Your model.<br />One kernel.<br /><em>Fully baked.</em></h1>
           <p class="dek">Compile supported Hugging Face models into one persistent CUDA
             kernel. Keep your model code. Keep <code>torch.compile</code>.
-            Bake away the launch overhead.</p>
+            Reduce kernel launch overhead.</p>
           <div class="hero-actions">
             <a class="button primary" href="#leaderboard">Explore the benchmarks <span aria-hidden="true">↗</span></a>
             <a class="button ghost" href="#download">Get a megakernel <span aria-hidden="true">↓</span></a>
@@ -194,7 +194,7 @@
           <p class="kicker">Artifacts</p>
           <h2>Download a megakernel.</h2>
           <p>
-            One click per model. Each zip is a published H200 decode package:
+            Download a published H200 decode package for each model:
             <code>module.py</code>, <code>report.json</code>, and
             <code>source_map.json</code>. Needs the MegaBake revision pinned in
             the report.
@@ -211,7 +211,7 @@
         <p class="download-foot">
           Source:
           <a href="https://github.com/megabake/megakernels">megabake/megakernels</a>.
-          Prefer the repo only when you want every kernel at once —
+          To get every kernel at once,
           <a href="https://github.com/megabake/megakernels/archive/refs/heads/main.zip"
             >download the full archive</a
           >.
@@ -369,14 +369,14 @@
 
       <section class="prose" id="why">
         <p class="kicker">Why this matters</p>
-        <h2>Peak decode, still inside torch.compile.</h2>
+        <h2>Compile through torch.compile.</h2>
         <dl class="why">
           <div>
             <dt>A backend beside Inductor</dt>
             <dd>MegaBake plugs in at the same handoff and keeps PyTorch’s guarantees about guards, aliasing, and state. The Dynamo/FX stack can schedule a whole model, not only emit one kernel per operator.</dd>
           </div>
           <div>
-            <dt>Day-0 architectures</dt>
+            <dt>Support for new architectures</dt>
             <dd>Models change every few weeks: new norms, RoPE variants, attention forms. MegaBake matches by semantics. Adding a model is an extension of the operator families.</dd>
           </div>
           <div>

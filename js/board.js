@@ -186,7 +186,7 @@ function rowMarkup(row) {
       <td data-label="Speed">
         <div class="speed-num"><span class="tok">0</span> <span>tok/s</span></div>
         <div class="speed-meta"><span class="ms">0.00</span> ms/token</div>
-        <div class="chip">—</div>
+        <div class="chip"></div>
         <div class="bars">
           <div class="bar-row"><em>MegaBake</em><div class="track"><i class="bake"></i></div></div>
           <div class="bar-row"><em>Inductor</em><div class="track"><i class="base"></i></div></div>

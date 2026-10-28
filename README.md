@@ -10,7 +10,7 @@ Numbers are batch-1 bf16 decode on an NVIDIA H200 MIG `3g.71gb` slice (60 SMs), 
 
 ## Download megakernels
 
-Published decode kernels live in [megabake/megakernels](https://github.com/megabake/megakernels). The site’s Download section lists each model with a one-click zip (`module.py`, `report.json`, `source_map.json`) fetched from that repo — no clone required.
+Published decode kernels live in [megabake/megakernels](https://github.com/megabake/megakernels). The site’s Download section lists each model with a one-click zip (`module.py`, `report.json`, `source_map.json`) fetched from that repo. No clone required.
 
 - **Pipelined** overlaps host work with the previous kernel.
 - **Synchronized** includes host work on the call.
